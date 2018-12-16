@@ -2,6 +2,7 @@ import os
 import time
 import csv
 import numpy as np
+import math
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -58,9 +59,9 @@ def create_data_loaders(args):
         from dataloaders.carla_dataloader import CarlaDataset
         if not args.evaluate:
             train_dataset = CarlaDataset(traindir, type='train',
-                modality=args.modality, sparsifier=sparsifier)
+                modality=args.modality, sparsifier=sparsifier, label_type=args.label_type)
         val_dataset = CarlaDataset(valdir, type='val',
-            modality=args.modality, sparsifier=sparsifier)
+            modality=args.modality, sparsifier=sparsifier, label_type=args.label_type)
 
     else:
         raise RuntimeError('Dataset not found.' +
@@ -279,6 +280,9 @@ def validate(val_loader, model, epoch, write_to_file=True):
             elif i == 8*skip:
                 filename = output_directory + '/comparison_' + str(epoch) + '.png'
                 utils.save_image(img_merge, filename)
+
+        if math.isnan(result.rmse):
+            print('Nan Detected : [{}/{}]'.format(i+1, len(val_loader)))
 
         if (i+1) % args.print_freq == 0:
             print('Test: [{0}/{1}]\t'

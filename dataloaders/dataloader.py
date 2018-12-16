@@ -98,11 +98,7 @@ class MyDataloader(data.Dataset):
 
     def get_label(self, index):
         path, target = self.imgs[index]
-        if self.label_name is not None:
-            lbl = self.label_name
-            filename = path + '_' + lbl + '.png'
-        else:
-            filename =path + '_diluted_label.png'
+        filename = path + '_' + self.label_type + '_label.png'
         label = imageio.imread(filename).astype('float32') / 255.0 * 1000.0
         return label
 

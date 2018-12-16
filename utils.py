@@ -11,6 +11,7 @@ def parse_command():
     model_names = ['resnet18', 'resnet50']
     loss_names = ['l1', 'l2']
     data_names = ['nyudepthv2', 'kitti', 'carla']
+    label_names = ['diluted', 'point', 'line']
     from dataloaders.dense_to_sparse import UniformSampling, SimulatedStereo
     sparsifier_names = [x.name for x in [UniformSampling, SimulatedStereo]]
     from models import Decoder
@@ -56,6 +57,8 @@ def parse_command():
                         help='evaluate model on validation set')
     parser.add_argument('--no-pretrain', dest='pretrained', action='store_false',
                         help='not to use ImageNet pre-trained weights')
+    parser.add_argument('--label-type', metavar='LABELTYPE', default='diluted', choices=label_names,
+                        help='label names: ' + ' | '.join(label_names) + ' (default: diluted)')
     parser.set_defaults(pretrained=True)
     args = parser.parse_args()
     if args.modality == 'rgb' and args.num_samples != 0:
@@ -85,10 +88,10 @@ def adjust_learning_rate(optimizer, epoch, lr_init):
 
 def get_output_directory(args):
     output_directory = os.path.join('results',
-        '{}.sparsifier={}.samples={}.modality={}.arch={}.decoder={}.criterion={}.lr={}.bs={}.pretrained={}'.
+        '{}.sparsifier={}.samples={}.modality={}.arch={}.decoder={}.criterion={}.lr={}.bs={}.pretrained={}.label-type={}'.
         format(args.data, args.sparsifier, args.num_samples, args.modality, \
             args.arch, args.decoder, args.criterion, args.lr, args.batch_size, \
-            args.pretrained))
+            args.pretrained, args.label_type))
     return output_directory
 
 

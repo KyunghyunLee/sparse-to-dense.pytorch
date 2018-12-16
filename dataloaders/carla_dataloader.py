@@ -10,8 +10,9 @@ iheight, iwidth = 480, 640 # raw image size
 DEPTH_LOG = False
 
 class CarlaDataset(MyDataloader):
-    def __init__(self, root, type, sparsifier=None, modality='rgbdl'):
+    def __init__(self, root, type, sparsifier=None, modality='rgbdl', label_type='diluted'):
         self.label_name = ''
+        self.label_type = label_type
         super(CarlaDataset, self).__init__(root, type, sparsifier, modality, self.make_dataset, self.carla_loader)
         self.output_size = (150, 200)
         print('Load carla dataset with depth_log:{}'.format(DEPTH_LOG))
@@ -37,10 +38,7 @@ class CarlaDataset(MyDataloader):
                 continue
             for root, _, fnames in sorted(os.walk(d)):
                 for fname in sorted(fnames):
-                    if fname.endswith('label.png'):
-                        if self.label_name == '':
-                            self.label_name = fname[9:-4]
-
+                    if fname.endswith('rgb_raw.png'):
                         filename = fname[:8]
                         path = os.path.join(root, filename)
                         item = (path, class_to_idx[target])
