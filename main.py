@@ -54,6 +54,13 @@ def create_data_loaders(args):
                 modality=args.modality, sparsifier=sparsifier)
         val_dataset = KITTIDataset(valdir, type='val',
             modality=args.modality, sparsifier=sparsifier)
+    elif args.data == 'carla':
+        from dataloaders.carla_dataloader import CarlaDataset
+        if not args.evaluate:
+            train_dataset = CarlaDataset(traindir, type='train',
+                modality=args.modality, sparsifier=sparsifier)
+        val_dataset = CarlaDataset(valdir, type='val',
+            modality=args.modality, sparsifier=sparsifier)
 
     else:
         raise RuntimeError('Dataset not found.' +
@@ -254,17 +261,17 @@ def validate(val_loader, model, epoch, write_to_file=True):
         else:
             if args.modality == 'rgb':
                 rgb = input
-            elif args.modality == 'rgbd':
+            elif args.modality == 'rgbd' or args.modality == 'rgbl':
                 rgb = input[:,:3,:,:]
                 depth = input[:,3:,:,:]
 
             if i == 0:
-                if args.modality == 'rgbd':
+                if args.modality == 'rgbd' or args.modality == 'rgbl':
                     img_merge = utils.merge_into_row_with_gt(rgb, depth, target, pred)
                 else:
                     img_merge = utils.merge_into_row(rgb, target, pred)
             elif (i < 8*skip) and (i % skip == 0):
-                if args.modality == 'rgbd':
+                if args.modality == 'rgbd' or args.modality == 'rgbl':
                     row = utils.merge_into_row_with_gt(rgb, depth, target, pred)
                 else:
                     row = utils.merge_into_row(rgb, target, pred)

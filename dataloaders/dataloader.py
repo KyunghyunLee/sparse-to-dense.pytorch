@@ -5,6 +5,8 @@ import torch.utils.data as data
 import h5py
 import dataloaders.transforms as transforms
 
+import imageio
+
 IMG_EXTENSIONS = ['.h5',]
 
 def is_image_file(filename):
@@ -44,10 +46,10 @@ def h5_loader(path):
 to_tensor = transforms.ToTensor()
 
 class MyDataloader(data.Dataset):
-    modality_names = ['rgb', 'rgbd', 'd'] # , 'g', 'gd'
+    modality_names = ['rgb', 'rgbd', 'd', 'rgbl'] # , 'g', 'gd'
     color_jitter = transforms.ColorJitter(0.4, 0.4, 0.4)
 
-    def __init__(self, root, type, sparsifier=None, modality='rgb', loader=h5_loader):
+    def __init__(self, root, type, sparsifier=None, modality='rgb', make_dataset=make_dataset, loader=h5_loader):
         classes, class_to_idx = find_classes(root)
         imgs = make_dataset(root, class_to_idx)
         assert len(imgs)>0, "Found 0 images in subfolders of: " + root + "\n"
@@ -90,6 +92,20 @@ class MyDataloader(data.Dataset):
         rgbd = np.append(rgb, np.expand_dims(sparse_depth, axis=2), axis=2)
         return rgbd
 
+    def create_rgbdl(self, rgb, depth):
+        rgbd = np.append(rgb, np.expand_dims(depth, axis=2), axis=2)
+        return rgbd
+
+    def get_label(self, index):
+        path, target = self.imgs[index]
+        if self.label_name is not None:
+            lbl = self.label_name
+            filename = path + '_' + lbl + '.png'
+        else:
+            filename =path + '_diluted_label.png'
+        label = imageio.imread(filename).astype('float32') / 255.0 * 1000.0
+        return label
+
     def __getraw__(self, index):
         """
         Args:
@@ -112,18 +128,24 @@ class MyDataloader(data.Dataset):
         # color normalization
         # rgb_tensor = normalize_rgb(rgb_tensor)
         # rgb_np = normalize_np(rgb_np)
-
+        label_np = None
         if self.modality == 'rgb':
             input_np = rgb_np
         elif self.modality == 'rgbd':
             input_np = self.create_rgbd(rgb_np, depth_np)
         elif self.modality == 'd':
             input_np = self.create_sparse_depth(rgb_np, depth_np)
+        elif self.modality == 'rgbl':
+            input_np = self.create_rgbdl(rgb_np, depth_np)
+            label_np = self.get_label(index)
 
         input_tensor = to_tensor(input_np)
         while input_tensor.dim() < 3:
             input_tensor = input_tensor.unsqueeze(0)
-        depth_tensor = to_tensor(depth_np)
+        if label_np is not None:
+            depth_tensor = to_tensor(label_np)
+        else:
+            depth_tensor = to_tensor(depth_np)
         depth_tensor = depth_tensor.unsqueeze(0)
 
         return input_tensor, depth_tensor
