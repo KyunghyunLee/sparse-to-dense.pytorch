@@ -55,16 +55,16 @@ class CarlaDataset(MyDataloader):
 
         # perform 1st step of data augmentation
         transform = transforms.Compose([
-            transforms.Translate(shift_x, 0.0),
-            transforms.Resize(300.0 / iheight), # this is for computational efficiency, since rotation can be slow
+            # transforms.Translate(shift_x, 0.0),
+            transforms.Resize(150.0 / iheight), # this is for computational efficiency, since rotation can be slow
             # transforms.Rotate(angle),
             # transforms.Resize(s),
-            transforms.CenterCrop(self.output_size),
+            # transforms.CenterCrop(self.output_size),
             transforms.HorizontalFlip(do_flip)
         ])
         label_transform = transforms.Compose([
-            transforms.Translate(shift_x / 2.0, 0.0),
-            transforms.CenterCrop(self.output_size),
+            # transforms.Translate(shift_x / 2.0, 0.0),
+            # transforms.CenterCrop(self.output_size),
             transforms.HorizontalFlip(do_flip)
         ])
         rgb_np = transform(rgb)
@@ -86,7 +86,7 @@ class CarlaDataset(MyDataloader):
             transforms.Resize(150.0 / iheight), # this is for computational efficiency, since rotation can be slow
             # transforms.Rotate(angle),
             # transforms.Resize(s),
-            transforms.CenterCrop(self.output_size),
+            # transforms.CenterCrop(self.output_size),
             transforms.HorizontalFlip(do_flip)
         ])
         rgb_np = transform(rgb)
@@ -99,8 +99,8 @@ class CarlaDataset(MyDataloader):
     def val_transform_label(self, rgb, depth, label):
         depth_np = depth
         transform = transforms.Compose([
-            transforms.Resize(300.0 / iheight),
-            transforms.CenterCrop(self.output_size),
+            transforms.Resize(150.0 / iheight),
+            # transforms.CenterCrop(self.output_size),
         ])
         # label_transform = transforms.CenterCrop(self.output_size),
 
