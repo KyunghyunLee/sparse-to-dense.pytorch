@@ -3,11 +3,16 @@ import torch
 import shutil
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
+
 from PIL import Image
 
 cmap = plt.cm.viridis
+current_time = ''
 
 def parse_command():
+    global current_time
+
     model_names = ['resnet18', 'resnet50']
     loss_names = ['l1', 'l2']
     data_names = ['nyudepthv2', 'kitti', 'carla']
@@ -18,7 +23,8 @@ def parse_command():
     decoder_names = Decoder.names
     from dataloaders.dataloader import MyDataloader
     modality_names = MyDataloader.modality_names
-
+    ct = datetime.datetime.now()
+    current_time = ct.strftime('%Y%m%d_%H%M%S')
     import argparse
     parser = argparse.ArgumentParser(description='Sparse-to-Dense')
     parser.add_argument('--arch', '-a', metavar='ARCH', default='resnet18', choices=model_names,
@@ -87,10 +93,11 @@ def adjust_learning_rate(optimizer, epoch, lr_init):
         param_group['lr'] = lr
 
 def get_output_directory(args):
+    global current_time
     output_directory = os.path.join('results',
-        '{}.sparsifier={}.samples={}.modality={}.arch={}.decoder={}.criterion={}.lr={}.bs={}.pretrained={}.label-type={}'.
-        format(args.data, args.sparsifier, args.num_samples, args.modality, \
-            args.arch, args.decoder, args.criterion, args.lr, args.batch_size, \
+        '{}_{}.sparsifier={}.samples={}.modality={}.arch={}.decoder={}.criterion={}.lr={}.bs={}.pretrained={}.label-type={}'.
+        format(current_time, args.data, args.sparsifier, args.num_samples, args.modality,
+            args.arch, args.decoder, args.criterion, args.lr, args.batch_size,
             args.pretrained, args.label_type))
     return output_directory
 

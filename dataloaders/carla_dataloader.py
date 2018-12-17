@@ -46,19 +46,44 @@ class CarlaDataset(MyDataloader):
 
         return images
 
-    def train_transform(self, rgb, depth):
+    def train_transform_label(self, rgb, depth, label):
         s = np.random.uniform(1.0, 1.5) # random scaling
-        depth_np = depth / s
+        depth_np = depth  # / s
         angle = np.random.uniform(-5.0, 5.0) # random rotation degrees
         do_flip = np.random.uniform(0.0, 1.0) < 0.5 # random horizontal flip
 
         # perform 1st step of data augmentation
         transform = transforms.Compose([
-            transforms.Resize(240.0 / iheight), # this is for computational efficiency, since rotation can be slow
-            transforms.Rotate(angle),
-            transforms.Resize(s),
-            transforms.CenterCrop(self.output_size),
-#            transforms.HorizontalFlip(do_flip)
+            transforms.Resize(200.0 / iheight), # this is for computational efficiency, since rotation can be slow
+            # transforms.Rotate(angle),
+            # transforms.Resize(s),
+            # transforms.CenterCrop(self.output_size),
+            transforms.HorizontalFlip(do_flip)
+        ])
+        label_transform = transforms.Compose([
+            # transforms.CenterCrop(self.output_size),
+            transforms.HorizontalFlip(do_flip)
+        ])
+        rgb_np = transform(rgb)
+        rgb_np = self.color_jitter(rgb_np) # random color jittering
+        rgb_np = np.asfarray(rgb_np, dtype='float') / 255
+        depth_np = transform(depth_np)
+        label_np = label_transform(label)
+        return rgb_np, depth_np, label_np
+
+    def train_transform(self, rgb, depth):
+        s = np.random.uniform(1.0, 1.5) # random scaling
+        depth_np = depth  # / s
+        angle = np.random.uniform(-5.0, 5.0) # random rotation degrees
+        do_flip = np.random.uniform(0.0, 1.0) < 0.5 # random horizontal flip
+
+        # perform 1st step of data augmentation
+        transform = transforms.Compose([
+            transforms.Resize(200.0 / iheight), # this is for computational efficiency, since rotation can be slow
+            # transforms.Rotate(angle),
+            # transforms.Resize(s),
+            # transforms.CenterCrop(self.output_size),
+            transforms.HorizontalFlip(do_flip)
         ])
         rgb_np = transform(rgb)
         rgb_np = self.color_jitter(rgb_np) # random color jittering
@@ -67,11 +92,25 @@ class CarlaDataset(MyDataloader):
 
         return rgb_np, depth_np
 
+    def val_transform_label(self, rgb, depth, label):
+        depth_np = depth
+        transform = transforms.Compose([
+            transforms.Resize(200.0 / iheight),
+            # transforms.CenterCrop(self.output_size),
+        ])
+        # label_transform = transforms.CenterCrop(self.output_size),
+
+        rgb_np = transform(rgb)
+        rgb_np = np.asfarray(rgb_np, dtype='float') / 255
+        depth_np = transform(depth_np)
+        label_np = label
+        return rgb_np, depth_np, label_np
+
     def val_transform(self, rgb, depth):
         depth_np = depth
         transform = transforms.Compose([
-            transforms.Resize(240.0 / iheight),
-            transforms.CenterCrop(self.output_size),
+            transforms.Resize(200.0 / iheight),
+            # transforms.CenterCrop(self.output_size),
         ])
         rgb_np = transform(rgb)
         rgb_np = np.asfarray(rgb_np, dtype='float') / 255

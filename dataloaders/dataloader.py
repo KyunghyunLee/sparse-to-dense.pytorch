@@ -59,9 +59,15 @@ class MyDataloader(data.Dataset):
         self.classes = classes
         self.class_to_idx = class_to_idx
         if type == 'train':
-            self.transform = self.train_transform
+            if modality == 'rgbl':
+                self.transform = self.train_transform_label
+            else:
+                self.transform = self.train_transform
         elif type == 'val':
-            self.transform = self.val_transform
+            if modality == 'rgbl':
+                self.transform = self.val_transform_label
+            else:
+                self.transform = self.val_transform
         else:
             raise (RuntimeError("Invalid dataset type: " + type + "\n"
                                 "Supported dataset types are: train, val"))
@@ -72,10 +78,16 @@ class MyDataloader(data.Dataset):
                                 "Supported dataset types are: " + ''.join(self.modality_names)
         self.modality = modality
 
+    def train_transform_label(self, rgb, depth, label):
+        raise (RuntimeError("train_transform() is not implemented. "))
+
+    def val_transform_label(self, rgb, depth, label):
+        raise (RuntimeError("val_transform() is not implemented."))
+
     def train_transform(self, rgb, depth):
         raise (RuntimeError("train_transform() is not implemented. "))
 
-    def val_transform(rgb, depth):
+    def val_transform(self, rgb, depth):
         raise (RuntimeError("val_transform() is not implemented."))
 
     def create_sparse_depth(self, rgb, depth):
@@ -116,10 +128,11 @@ class MyDataloader(data.Dataset):
 
     def __getitem__(self, index):
         rgb, depth = self.__getraw__(index)
-        if self.transform is not None:
-            rgb_np, depth_np = self.transform(rgb, depth)
-        else:
-            raise(RuntimeError("transform not defined"))
+        if self.modality != 'rgbl':
+            if self.transform is not None:
+                rgb_np, depth_np = self.transform(rgb, depth)
+            else:
+                raise(RuntimeError("transform not defined"))
 
         # color normalization
         # rgb_tensor = normalize_rgb(rgb_tensor)
@@ -132,19 +145,20 @@ class MyDataloader(data.Dataset):
         elif self.modality == 'd':
             input_np = self.create_sparse_depth(rgb_np, depth_np)
         elif self.modality == 'rgbl':
-            input_np = self.create_rgbdl(rgb_np, depth_np)
             label_np = self.get_label(index)
+            rgb_np, depth_np, label_np = self.transform(rgb, depth, label_np)
+            input_np = self.create_rgbdl(rgb_np, depth_np)
 
         input_tensor = to_tensor(input_np)
         while input_tensor.dim() < 3:
             input_tensor = input_tensor.unsqueeze(0)
         if label_np is not None:
-            depth_tensor = to_tensor(label_np)
+            label_tensor = to_tensor(label_np)
         else:
-            depth_tensor = to_tensor(depth_np)
-        depth_tensor = depth_tensor.unsqueeze(0)
+            label_tensor = to_tensor(depth_np)
+        label_tensor = label_tensor.unsqueeze(0)
 
-        return input_tensor, depth_tensor
+        return input_tensor, label_tensor
 
     def __len__(self):
         return len(self.imgs)
