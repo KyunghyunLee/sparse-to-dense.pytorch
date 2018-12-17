@@ -6,6 +6,8 @@ import h5py
 import dataloaders.transforms as transforms
 
 import imageio
+import cv2
+from matplotlib import pyplot as plt
 
 IMG_EXTENSIONS = ['.h5',]
 
@@ -46,7 +48,7 @@ def h5_loader(path):
 to_tensor = transforms.ToTensor()
 
 class MyDataloader(data.Dataset):
-    modality_names = ['rgb', 'rgbd', 'd', 'rgbl'] # , 'g', 'gd'
+    modality_names = ['rgb', 'rgbd', 'd', 'rgbl', 'rgbde'] # , 'g', 'gd'
     color_jitter = transforms.ColorJitter(0.4, 0.4, 0.4)
 
     def __init__(self, root, type, sparsifier=None, modality='rgb', make_dataset=make_dataset, loader=h5_loader):
@@ -104,6 +106,13 @@ class MyDataloader(data.Dataset):
         rgbd = np.append(rgb, np.expand_dims(sparse_depth, axis=2), axis=2)
         return rgbd
 
+    def create_rgbde(self, rgb, depth):
+        sparse_depth = self.create_sparse_depth(rgb, depth)
+        edge = cv2.Canny(rgb, 100, 200)
+        rgbd = np.append(rgb, np.expand_dims(sparse_depth, axis=2), axis=2)
+        rgbde = np.append(rgbd, np.expand_dims(edge, axis=2), axis=2)
+        return rgbde
+
     def create_rgbdl(self, rgb, depth):
         rgbd = np.append(rgb, np.expand_dims(depth, axis=2), axis=2)
         return rgbd
@@ -138,16 +147,38 @@ class MyDataloader(data.Dataset):
         # rgb_tensor = normalize_rgb(rgb_tensor)
         # rgb_np = normalize_np(rgb_np)
         label_np = None
+        debug_figure = False
+        if debug_figure:
+            fig = plt.figure(1)
+            a1 = fig.add_subplot(2, 3, 1)
+            a2 = fig.add_subplot(2, 3, 2)
+            a3 = fig.add_subplot(2, 3, 3)
+            a4 = fig.add_subplot(2, 3, 4)
+            a5 = fig.add_subplot(2, 3, 5)
+            a6 = fig.add_subplot(2, 3, 6)
+
         if self.modality == 'rgb':
             input_np = rgb_np
         elif self.modality == 'rgbd':
             input_np = self.create_rgbd(rgb_np, depth_np)
         elif self.modality == 'd':
             input_np = self.create_sparse_depth(rgb_np, depth_np)
+        elif self.modality == 'rgbde':
+            input_np = self.create_rgbde(rgb_np, depth_np)
         elif self.modality == 'rgbl':
             label_np = self.get_label(index)
+            if debug_figure:
+                a1.imshow(rgb)
+                a2.imshow(depth)
+                a3.imshow(label_np)
             rgb_np, depth_np, label_np = self.transform(rgb, depth, label_np)
             input_np = self.create_rgbdl(rgb_np, depth_np)
+
+        if debug_figure:
+            a4.imshow(rgb_np)
+            a5.imshow(depth_np)
+            a6.imshow(label_np)
+            plt.show()
 
         input_tensor = to_tensor(input_np)
         while input_tensor.dim() < 3:

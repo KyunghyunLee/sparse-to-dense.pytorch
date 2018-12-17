@@ -285,6 +285,18 @@ class NormalizeTensor(object):
             t.sub_(m).div_(s)
         return tensor
 
+class Translate(object):
+    def __init__(self, pixel_x, pixel_y):
+        self.pixel_x = pixel_x
+        self.pixel_y = pixel_y
+
+    def __call__(self, img):
+        shift = [self.pixel_y, self.pixel_x]
+        if len(img.shape) == 3:
+            shift.append(0.0)
+
+        return itpl.shift(img, shift)
+
 class Rotate(object):
     """Rotates the given ``numpy.ndarray``.
 
